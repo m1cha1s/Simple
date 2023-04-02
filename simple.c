@@ -18,6 +18,46 @@ Token *scan(char *src)
             continue;
             break;
         }
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+        {
+            unsigned long j = i + 1;
+            for (; j < strlen(src + i); j++)
+                if (src[j] == ' ' || src[j] == '\0')
+                    break;
+
+            char *int_str = (char *)malloc(j - i + 1);
+            strncpy(int_str, src + i, j - i);
+
+            tok = (Token *)malloc(sizeof(TokenLitInt));
+            tok->type = TOKEN_LIT_INT;
+            ((TokenLitInt *)tok)->Int = atoi(int_str);
+
+            free(int_str);
+
+            return tok;
+            break;
+        }
+        case 'G':
+        case 'g':
+        {
+            if (!strncmp(src + i, "goto", 4) || !strncmp(src + i, "GOTO", 4))
+            {
+                tok = (Token *)malloc(sizeof(TokenGoto));
+                tok->type = TOKEN_GOTO;
+                ((TokenGoto *)tok)->value = scan(src + i + 4);
+                return tok;
+            }
+            break;
+        }
         case 'R':
         case 'r':
         {
@@ -84,6 +124,13 @@ int eval(SimpleVM *vm, char *src)
 
     switch (tok->type)
     {
+    case TOKEN_GOTO:
+    {
+        // FIXME: Check for correct type
+        vm->pc = ((TokenLitInt *)(((TokenGoto *)tok)->value))->Int - 2; // -2 to accomodate for the line number offset and loop increment above
+        return 0;
+        break;
+    }
     case TOKEN_RUN:
     {
         return eval_prog(vm);
@@ -99,6 +146,18 @@ int eval(SimpleVM *vm, char *src)
             vm->print(((TokenLitString *)((TokenPrint *)tok)->value)->string);
             return 0;
             break;
+        }
+        case TOKEN_LIT_INT:
+        {
+            int x = ((TokenLitInt *)((TokenPrint *)tok)->value)->Int;
+            size_t lenght = snprintf(NULL, 0, "%d", x) + 1;
+            char *str = malloc(lenght);
+            snprintf(str, lenght, "%d", x);
+
+            vm->print("\n");
+            vm->print(str);
+
+            free(str);
         }
         default:
             return 1;
