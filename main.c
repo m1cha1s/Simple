@@ -14,6 +14,7 @@ int main()
         .print = prt,
         .lines = {NULL},
         .pc = 0,
+        .variables = {{.name = NULL}},
     };
 
     while (1)
@@ -23,8 +24,6 @@ int main()
         char *line = NULL;
         size_t size = 0;
         getline(&line, &size, stdin);
-
-        printf("%s\n", line);
 
         rep(&vm, line);
 

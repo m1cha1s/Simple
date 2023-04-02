@@ -1,0 +1,22 @@
+{
+    "files.associations": {
+        "*.h": "c",
+        "__locale": "c",
+        "atomic": "c",
+        "bit": "c",
+        "compare": "c",
+        "cstddef": "c",
+        "ios": "c",
+        "limits": "c",
+        "locale": "c",
+        "new": "c",
+        "string": "c",
+        "type_traits": "c",
+        "variant": "c",
+        "condition_variable": "c",
+        "optional": "c",
+        "memory": "c",
+        "mutex": "c",
+        "functional": "c"
+    }
+}
