@@ -18,6 +18,17 @@ Token *scan(char *src)
             continue;
             break;
         }
+        case 'R':
+        case 'r':
+        {
+            if (!strncmp(src + i, "run", 3) || !strncmp(src + i, "RUN", 3))
+            {
+                tok = (Token *)malloc(sizeof(Token));
+                tok->type = TOKEN_RUN;
+                return tok;
+            }
+            break;
+        }
         case 'P':
         case 'p':
         {
@@ -51,23 +62,39 @@ Token *scan(char *src)
     return NULL;
 }
 
-// int eval_prog(SimpleVM *vm)
-// {
-// }
+int eval_prog(SimpleVM *vm)
+{
+    for (vm->pc = 0; vm->pc <= vm->last_line; vm->pc++)
+    {
+
+        if (!vm->lines[vm->pc])
+            continue;
+
+        if (eval(vm, vm->lines[vm->pc]))
+            return 1;
+    }
+    return 0;
+}
 
 int eval(SimpleVM *vm, char *src)
 {
     Token *tok = scan(src);
+    if (!tok)
+        return 1;
 
     switch (tok->type)
     {
+    case TOKEN_RUN:
+    {
+        return eval_prog(vm);
+        break;
+    }
     case TOKEN_PRINT:
     {
         switch (((TokenPrint *)tok)->value->type)
         {
         case TOKEN_LIT_STRING:
         {
-            vm->pc = 0;
             vm->print("\n");
             vm->print(((TokenLitString *)((TokenPrint *)tok)->value)->string);
             return 0;
@@ -104,12 +131,15 @@ int rep(SimpleVM *vm, char *input)
         char *line_num_str = malloc(i + 1);
         strncpy(line_num_str, input, i);
 
-        int line_num = atoi(line_num_str);
+        unsigned int line_num = atoi(line_num_str) - 1;
 
         free(line_num_str);
 
         vm->lines[line_num] = malloc(strlen(input) - i);
-        strcpy(vm->lines[line_num], input + i);
+        strcpy(vm->lines[line_num], input + i + 1);
+
+        if (vm->last_line < line_num)
+            vm->last_line = line_num;
 
         return 0;
     }

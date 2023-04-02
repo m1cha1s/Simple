@@ -20,13 +20,17 @@ typedef struct _Variable
 typedef struct _SimpleVM
 {
     void (*print)(char *);
+
     Variable variables[MAX_VARIABLE_COUNT];
+
     char *lines[MAX_LINE_COUNT];
+    unsigned int last_line;
     unsigned int pc;
 } SimpleVM;
 
 typedef enum _TokenType
 {
+    TOKEN_RUN,
     TOKEN_PRINT,
     TOKEN_LIT_STRING,
 } TokenType;
@@ -50,7 +54,7 @@ typedef struct _TokenLitString
 
 int eval(SimpleVM *vm, char *cmd);
 Token *scan(char *src);
-// int eval_prog(SimpleVM *vm);
+int eval_prog(SimpleVM *vm);
 int rep(SimpleVM *vm, char *input);
 
 #endif
