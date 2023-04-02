@@ -15,7 +15,7 @@ commit:
 	git commit
 	git push
 
-Simple: main.o
+Simple: main.o simple.o
 	$(CC) -o $@ $^
 
 %.o: %.c
