@@ -5,7 +5,21 @@
 
 #include "simple.h"
 
-static void cleanupToken(Token *token)
+#define ERR(err, clean, ret)  \
+    {                         \
+        vm->errorMsg = (err); \
+        (clean);              \
+        return (ret);         \
+    }
+
+#define CHECK_ERR(ret)    \
+    {                     \
+        if (vm->errorMsg) \
+            return (ret); \
+    }
+
+static void
+cleanupToken(Token *token)
 {
     if (!token)
         return;
@@ -168,7 +182,7 @@ TokenVar *scanVar(char *src)
     TokenVar *tok = NULL;
     unsigned long j = 1;
     for (; j < strlen(src); j++)
-        if (src[j] == ' ' || src[j] == '\0' || src[j] == '\n')
+        if (src[j] == ' ' || src[j] == '\0' || src[j] == '\n' || src[j] == '=' || src[j] == '+' || src[j] == '-' || src[j] == '*' || src[j] == '/')
             break;
 
     tok = malloc(sizeof(TokenVar));
@@ -185,8 +199,11 @@ TokenEqual *scanEqual(char *src)
 
     unsigned long j = 1;
     for (; j < strlen(src); j++)
-        if (src[j] == ' ')
+        if (src[j] == ' ' || src[j] == '=')
+        {
+            j--;
             break;
+        }
     if (src[j] == '\0')
         return tok;
 
@@ -201,6 +218,39 @@ TokenEqual *scanEqual(char *src)
     tok->type = TOKEN_EQUAL;
     tok->var = scanVar(src);
     tok->value = scan(src + k + 1);
+    return tok;
+}
+
+TokenPlus *scanPlus(char *src)
+{
+    TokenPlus *tok = NULL;
+
+    unsigned long j = 1;
+    for (; j < strlen(src); j++)
+        if (src[j] == ' ' || src[j] == '+')
+        {
+            j--;
+            break;
+        }
+    if (src[j] == '\0')
+        return tok;
+
+    unsigned long k = j + 1;
+    for (; k < strlen(src); k++)
+        if (src[k] == '+')
+            break;
+    if (src[k] == '\0')
+        return tok;
+
+    tok = malloc(sizeof(TokenPlus));
+    tok->type = TOKEN_PLUS;
+
+    char *lVal = (char *)malloc(j + 2);
+    lVal[j + 1] = '\0';
+    strncpy(lVal, src, j + 1);
+    tok->lVal = scan(lVal);
+    free(lVal);
+    tok->rVal = scan(src + k + 1);
     return tok;
 }
 
@@ -252,12 +302,18 @@ Token *scan(char *src)
             tok = (Token *)scanEqual(src + i);
             if (tok)
                 return tok;
+            tok = (Token *)scanPlus(src + i);
+            if (tok)
+                return tok;
             break;
         }
         case 'G':
         case 'g':
         {
             tok = (Token *)scanEqual(src + i);
+            if (tok)
+                return tok;
+            tok = (Token *)scanPlus(src + i);
             if (tok)
                 return tok;
             tok = (Token *)scanGoto(src + i);
@@ -272,6 +328,9 @@ Token *scan(char *src)
             tok = (Token *)scanEqual(src + i);
             if (tok)
                 return tok;
+            tok = (Token *)scanPlus(src + i);
+            if (tok)
+                return tok;
             tok = scanRun(src + i);
             if (tok)
                 return tok;
@@ -282,6 +341,9 @@ Token *scan(char *src)
         case 'p':
         {
             tok = (Token *)scanEqual(src + i);
+            if (tok)
+                return tok;
+            tok = (Token *)scanPlus(src + i);
             if (tok)
                 return tok;
             tok = (Token *)scanPrint(src + i);
@@ -298,6 +360,9 @@ Token *scan(char *src)
         default:
         {
             tok = (Token *)scanEqual(src + i);
+            if (tok)
+                return tok;
+            tok = (Token *)scanPlus(src + i);
             if (tok)
                 return tok;
             return (Token *)scanVar(src + i);
@@ -374,7 +439,7 @@ Token *evalToken(SimpleVM *vm, Token *tok)
             char *str = malloc(lenght);
             if (!str)
             {
-                vm->errorMsg = "[EVAL ERR] Allocation failed!";
+                vm->errorMsg = "[evalToken TOKEN_LIST] Allocation failed!";
                 return NULL;
             }
             snprintf(str, lenght, "\t%4d %s", i + 1, vm->lines[i]);
@@ -393,7 +458,7 @@ Token *evalToken(SimpleVM *vm, Token *tok)
         Variable *v = findVariable(vm, var->name);
         if (!v)
         {
-            vm->errorMsg = "[EVAL ERR] Variable not found!";
+            vm->errorMsg = "[evalToken TOKEN_VAR] Variable not found!";
             return NULL;
         }
 
@@ -405,6 +470,39 @@ Token *evalToken(SimpleVM *vm, Token *tok)
         cleanupToken((Token *)var);
         return (Token *)val;
 
+        break;
+    }
+    case TOKEN_PLUS:
+    {
+        TokenPlus *add = (TokenPlus *)tok;
+
+        TokenVal *lVal = (TokenVal *)evalToken(vm, add->lVal);
+        CHECK_ERR(NULL)
+        TokenVal *rVal = (TokenVal *)evalToken(vm, add->rVal);
+        CHECK_ERR(NULL)
+
+        add->lVal = (Token *)lVal;
+        add->rVal = (Token *)rVal;
+
+        if (!rVal || !lVal)
+            ERR("[evalToken TOKEN_PLUS] Invalid token!", cleanupToken((Token *)add), NULL)
+
+        if (rVal->value.type != lVal->value.type)
+        {
+            ERR("[evalToken TOKEN_PLUS] Type missmatch!", cleanupToken((Token *)add), NULL)
+        }
+
+        TokenVal *res = malloc(sizeof(TokenVal));
+        res->type = TOKEN_VAL;
+
+        if (rVal->value.type == INT_VALUE)
+        {
+            res->value.type = INT_VALUE;
+            res->value.value.Int = lVal->value.value.Int + rVal->value.value.Int;
+        }
+
+        cleanupToken((Token *)add);
+        return (Token *)res;
         break;
     }
     case TOKEN_EQUAL:
@@ -420,7 +518,7 @@ Token *evalToken(SimpleVM *vm, Token *tok)
         value = evalToken(vm, value);
         if (!value)
         {
-            vm->errorMsg = "[EVAL ERR] Invalid token!";
+            vm->errorMsg = "[evalToken TOKEN_EQUAL] Invalid token!";
             return NULL;
         }
 
@@ -451,7 +549,7 @@ Token *evalToken(SimpleVM *vm, Token *tok)
             }
             default:
             {
-                vm->errorMsg = "[EVAL ERR] Unkown value type!";
+                vm->errorMsg = "[evalToken TOKEN_EQUAL] Unkown value type!";
                 return NULL;
             }
             }
@@ -460,7 +558,7 @@ Token *evalToken(SimpleVM *vm, Token *tok)
             break;
         }
         default:
-            vm->errorMsg = "[EVAL ERR] Unexpected token type!";
+            vm->errorMsg = "[evalToken TOKEN_EQUAL] Unexpected token type!";
             cleanupToken(value);
             break;
         }
@@ -482,7 +580,7 @@ Token *evalToken(SimpleVM *vm, Token *tok)
             goto TOKEN_GOTO_ERR;
         if (val->value.type != INT_VALUE)
         {
-            vm->errorMsg = "[EVAL ERR] Expected int value!";
+            vm->errorMsg = "[evalToken TOKEN_GOTO] Expected int value!";
             return NULL;
             break;
         }
@@ -492,7 +590,7 @@ Token *evalToken(SimpleVM *vm, Token *tok)
         return NULL;
         break;
     TOKEN_GOTO_ERR:
-        vm->errorMsg = "[EVAL ERR] Expected value/variable!";
+        vm->errorMsg = "[evalToken TOKEN_GOTO] Expected value/variable!";
         return NULL;
         break;
     }
@@ -506,9 +604,10 @@ Token *evalToken(SimpleVM *vm, Token *tok)
     case TOKEN_PRINT:
     {
         TokenVal *val = (TokenVal *)evalToken(vm, ((TokenPrint *)tok)->value);
+        CHECK_ERR(NULL);
         if (!val)
         {
-            vm->errorMsg = "[EVAL ERR] Invalid token!";
+            vm->errorMsg = "[evalToken TOKEN_PRINT] Invalid token!";
             return NULL;
         }
 
@@ -532,7 +631,7 @@ Token *evalToken(SimpleVM *vm, Token *tok)
             char *str = malloc(lenght);
             if (!str)
             {
-                vm->errorMsg = "[EVAL ERR] Allocation failed!";
+                vm->errorMsg = "[evalToken TOKEN_PRINT] Allocation failed!";
                 return NULL;
             }
             snprintf(str, lenght, "%d", x);
@@ -545,7 +644,7 @@ Token *evalToken(SimpleVM *vm, Token *tok)
         }
         default:
         {
-            vm->errorMsg = "[EVAL ERR] Unkown value type!";
+            vm->errorMsg = "[evalToken TOKEN_PRINT] Unkown value type!";
             return NULL;
         }
         }
@@ -583,7 +682,7 @@ Token *evalToken(SimpleVM *vm, Token *tok)
     }
     default:
         cleanupToken(tok);
-        vm->errorMsg = "[EVAL ERR] Unknown token!";
+        vm->errorMsg = "[evalToken] Unknown token!";
         return NULL;
         break;
     }

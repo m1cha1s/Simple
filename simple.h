@@ -46,7 +46,7 @@ typedef enum _TokenType
 
     TOKEN_EQUAL,
 
-    // TODO: Implements these
+    // TODO: Implement these
     TOKEN_PLUS,
     TOKEN_MINUS,
     TOKEN_STAR,
@@ -97,6 +97,13 @@ typedef struct _TokenEqual
     TokenVar *var;
     Token *value;
 } TokenEqual;
+
+typedef struct _TokenPlus
+{
+    TokenType type;
+    Token *lVal;
+    Token *rVal;
+} TokenPlus;
 
 typedef struct _TokenLitString
 {
