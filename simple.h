@@ -39,11 +39,15 @@ typedef struct _SimpleVM
 
 typedef enum _TokenType
 {
+    TOKEN_LIST,
     TOKEN_GOTO,
     TOKEN_RUN,
     TOKEN_PRINT,
+
     TOKEN_EQUAL,
+
     TOKEN_VAR,
+
     TOKEN_VAL,
 
     TOKEN_LIT_STRING,

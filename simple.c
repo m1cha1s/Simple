@@ -100,6 +100,7 @@ TokenLitInt *scanInt(char *src)
 
     char *int_str = (char *)malloc(j + 1);
     strncpy(int_str, src, j);
+    int_str[j] = '\0';
 
     tok = malloc(sizeof(TokenLitInt));
     tok->type = TOKEN_LIT_INT;
@@ -157,6 +158,8 @@ TokenLitString *scanLitString(char *src)
     tok->type = TOKEN_LIT_STRING;
     tok->string = (char *)malloc(j);
     strncpy(tok->string, src + 1, j - 1);
+    tok->string[j - 1] = '\0';
+
     return tok;
 }
 
@@ -172,6 +175,7 @@ TokenVar *scanVar(char *src)
     tok->type = TOKEN_VAR;
     tok->name = (char *)malloc(j + 1);
     strncpy(tok->name, src, j);
+    tok->name[j] = '\0';
     return tok;
 }
 
@@ -197,6 +201,17 @@ TokenEqual *scanEqual(char *src)
     tok->type = TOKEN_EQUAL;
     tok->var = scanVar(src);
     tok->value = scan(src + k + 1);
+    return tok;
+}
+
+Token *scanList(char *src)
+{
+    Token *tok = NULL;
+    if (!strncmp(src, "list", 4) || !strncmp(src, "LIST", 4))
+    {
+        tok = (Token *)malloc(sizeof(Token));
+        tok->type = TOKEN_LIST;
+    }
     return tok;
 }
 
@@ -231,6 +246,9 @@ Token *scan(char *src)
         case 'L':
         case 'l':
         {
+            tok = scanList(src + i);
+            if (tok)
+                return tok;
             tok = (Token *)scanEqual(src + i);
             if (tok)
                 return tok;
@@ -294,7 +312,6 @@ int evalProg(SimpleVM *vm)
 {
     for (vm->pc = 0; vm->pc <= vm->last_line; vm->pc++)
     {
-
         if (!vm->lines[vm->pc])
             continue;
 
@@ -346,6 +363,29 @@ Token *evalToken(SimpleVM *vm, Token *tok)
         return NULL;
     switch (tok->type)
     {
+    case TOKEN_LIST:
+    {
+        for (int i = 0; i < MAX_LINE_COUNT; i++)
+        {
+            if (!(vm->lines[i]))
+                continue;
+
+            size_t lenght = snprintf(NULL, 0, "\t%4d %s", i + 1, vm->lines[i]) + 1;
+            char *str = malloc(lenght);
+            if (!str)
+            {
+                vm->errorMsg = "[EVAL ERR] Allocation failed!";
+                return NULL;
+            }
+            snprintf(str, lenght, "\t%4d %s", i + 1, vm->lines[i]);
+
+            vm->print(str);
+
+            free(str);
+        }
+        return NULL;
+        break;
+    }
     case TOKEN_VAR:
     {
         TokenVar *var = (TokenVar *)tok;
@@ -504,6 +544,7 @@ Token *evalToken(SimpleVM *vm, Token *tok)
 
         val->value.type = STRING_VALUE;
         val->value.value.string = malloc(strlen(((TokenLitString *)tok)->string) + 1);
+        // val->value.value.string[strlen(((TokenLitString *)tok)->string)] = '\0';
         strcpy(val->value.value.string, ((TokenLitString *)tok)->string);
 
         cleanupToken(tok);
@@ -536,10 +577,28 @@ int eval(SimpleVM *vm, char *src)
 {
     Token *tok = scan(src);
     if (!tok)
-        return 1;
+    {
+        vm->errorMsg = "[EVAL ERR] Unknown token!";
+    }
+    if (!(vm->errorMsg))
+        evalToken(vm, tok);
 
-    if (evalToken(vm, tok))
+    if (vm->errorMsg)
+    {
+        size_t lenght = snprintf(NULL, 0, "Line: %d %s\n", vm->pc, vm->errorMsg) + 1;
+        char *str = malloc(lenght);
+        if (!str)
+        {
+            vm->errorMsg = "[EVAL ERR] Allocation failed!";
+            return 1;
+        }
+        snprintf(str, lenght, "Line: %d %s\n", vm->pc, vm->errorMsg);
+
+        vm->print(str);
+
+        free(str);
         return 1;
+    }
 
     return 0;
 }
@@ -559,9 +618,9 @@ int rep(SimpleVM *vm, char *input)
                 break;
 
         // TODO: Handle malloc failure
-
         char *line_num_str = malloc(i + 1);
         strncpy(line_num_str, input, i);
+        line_num_str[i] = '\0';
 
         unsigned int line_num = atoi(line_num_str) - 1;
 

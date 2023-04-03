@@ -15,6 +15,7 @@ int main()
         .lines = {NULL},
         .pc = 0,
         .variables = {{.name = NULL}},
+        .errorMsg = NULL,
     };
 
     printf("\n");
