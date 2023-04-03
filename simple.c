@@ -474,9 +474,25 @@ Token *evalToken(SimpleVM *vm, Token *tok)
     }
     case TOKEN_GOTO:
     {
-        // FIXME: Check for correct type
-        vm->pc = ((TokenLitInt *)(((TokenGoto *)tok)->value))->Int - 2; // -2 to accomodate for the line number offset and loop increment above
+        TokenVal *val = (TokenVal *)evalToken(vm, ((TokenGoto *)tok)->value);
+        ((TokenGoto *)tok)->value = (Token *)val;
+        if (!val)
+            goto TOKEN_GOTO_ERR;
+        if (val->type != TOKEN_VAL)
+            goto TOKEN_GOTO_ERR;
+        if (val->value.type != INT_VALUE)
+        {
+            vm->errorMsg = "[EVAL ERR] Expected int value!";
+            return NULL;
+            break;
+        }
+
+        vm->pc = val->value.value.Int - 2; // -2 to accomodate for the line number offset and loop increment above
         cleanupToken(tok);
+        return NULL;
+        break;
+    TOKEN_GOTO_ERR:
+        vm->errorMsg = "[EVAL ERR] Expected value/variable!";
         return NULL;
         break;
     }

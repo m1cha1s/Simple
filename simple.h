@@ -46,6 +46,14 @@ typedef enum _TokenType
 
     TOKEN_EQUAL,
 
+    // TODO: Implements these
+    TOKEN_PLUS,
+    TOKEN_MINUS,
+    TOKEN_STAR,
+    TOKEN_SLASH,
+    TOKEN_LESS,
+    TOKEN_GREATER,
+
     TOKEN_VAR,
 
     TOKEN_VAL,
