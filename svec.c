@@ -11,7 +11,7 @@ void svecInit(SVec *v)
     v->data = SMALLOC(sizeof(void *) * v->capacity);
 }
 
-static void svecResize(SVec *v, unsigned int cap)
+static void svecResize(SVec *v, uint32_t cap)
 {
     void **data = SREALLOC(v->data, sizeof(void *) * cap);
     if (data)
@@ -21,6 +21,11 @@ static void svecResize(SVec *v, unsigned int cap)
     }
 }
 
+uint32_t svecLen(SVec *v)
+{
+    return v->total;
+}
+
 void svecAdd(SVec *v, void *data)
 {
     if (v->capacity >= v->total)
@@ -28,28 +33,28 @@ void svecAdd(SVec *v, void *data)
     v->data[v->total++] = data;
 }
 
-void svecSet(SVec *v, unsigned int idx, void *data)
+void svecSet(SVec *v, uint32_t idx, void *data)
 {
     if (idx >= 0 && idx < v->total)
         v->data[idx] = data;
 }
 
-void *svecGet(SVec *v, unsigned int idx)
+void *svecGet(SVec *v, uint32_t idx)
 {
     if (idx >= 0 && idx < v->total)
         return v->data[idx];
     return NULL;
 }
 
-void *svecDelete(SVec *v, unsigned int idx)
+void svecDelete(SVec *v, uint32_t idx)
 {
     if (idx < 0 || idx >= v->total)
-        return NULL;
+        return;
 
-    void *deleted = v->data[idx];
+    SFREE(v->data[idx]);
     v->data[idx] = NULL;
 
-    for (unsigned int i = idx; i < v->total - 1; i++)
+    for (uint32_t i = idx; i < v->total - 1; i++)
     {
         v->data[i] = v->data[i + 1];
         v->data[i + 1] = NULL;
@@ -63,5 +68,7 @@ void *svecDelete(SVec *v, unsigned int idx)
 
 void svecFree(SVec *v)
 {
+    for (uint32_t i = 0; i < v->total; i++)
+        SFREE(v->data[i]);
     SFREE(v->data);
 }

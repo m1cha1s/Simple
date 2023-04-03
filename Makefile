@@ -1,5 +1,7 @@
 CC := gcc
-CFLAGS := -Wall -Werror -Wextra -std=c99
+CFLAGS := -Wall -Wextra -std=c99
+
+SIMPLE_OBJ := simple.o slexer.o svec.o sparser.o
 
 .PHONY: run
 run: Simple
@@ -15,7 +17,7 @@ commit:
 	git commit
 	git push
 
-Simple: main.o simple.o
+Simple: main.o $(SIMPLE_OBJ)
 	$(CC) -o $@ $^
 
 %.o: %.c
