@@ -17,17 +17,17 @@ int main()
         .variables = {{.name = NULL}},
     };
 
+    printf("\n");
+
     while (1)
     {
         rep(&vm, "");
 
-        char *line = NULL;
-        size_t size = 0;
-        getline(&line, &size, stdin);
+        char line[1024];
+
+        fgets(line, 1024, stdin);
 
         rep(&vm, line);
-
-        free(line);
     }
 
     printf("\n");

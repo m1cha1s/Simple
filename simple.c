@@ -465,8 +465,8 @@ Token *evalToken(SimpleVM *vm, Token *tok)
         {
         case STRING_VALUE:
         {
-            vm->print("\n");
             vm->print(v.value.string);
+            vm->print("\n");
             break;
         }
         case INT_VALUE:
@@ -481,8 +481,8 @@ Token *evalToken(SimpleVM *vm, Token *tok)
             }
             snprintf(str, lenght, "%d", x);
 
-            vm->print("\n");
             vm->print(str);
+            vm->print("\n");
 
             free(str);
             break;
@@ -548,7 +548,7 @@ int rep(SimpleVM *vm, char *input)
 {
     if (input[0] == '\0')
     {
-        vm->print("\n>");
+        vm->print(">");
         return 0;
     }
     if ((input[0] >= '0') && (input[0] <= '9'))
