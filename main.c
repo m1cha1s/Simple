@@ -35,9 +35,12 @@
 //     return 0;
 // }
 
+#include "scommon.h"
 #include "svec.h"
 #include "slexer.h"
 #include "sparser.h"
+#include "scompiler.h"
+#include "svm.h"
 
 int main()
 {
@@ -63,5 +66,23 @@ int main()
         ParseTok *tok = svecGet(&pt, i);
         if (tok->type == PARSE_TOK_PRINT)
             printf("%d PRINT_TOKEN: %s\n", i, (char *)(tok->meta.unary->meta.value));
+    }
+
+    VMProg prog;
+
+    vmProgInit(&prog);
+
+    CompilerErr ce = compile(&pt, &prog);
+
+    printf("%d\n", svecLen(&(prog.prog)));
+    for (int i = 0; i < svecLen(&(prog.prog)); i++)
+    {
+        Op *op = svecGet(&(prog.prog), i);
+
+        if (op->type == OP_CONST_I)
+            printf("%d OP_CONST_I\n", i);
+
+        if (op->type == OP_PRINT)
+            printf("%d OP_PRINT\n", i);
     }
 }

@@ -6,7 +6,7 @@
 #include "scommon.h"
 
 #define LEX_TRY(func)    \
-    if ((tok = (func)))  \
+    if (tok = (func))    \
     {                    \
         svecAdd(v, tok); \
         continue;        \

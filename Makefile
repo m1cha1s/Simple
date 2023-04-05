@@ -1,7 +1,7 @@
 CC := gcc
 CFLAGS := -Wall -Wextra -std=c99
 
-SIMPLE_OBJ := simple.o slexer.o svec.o sparser.o
+SIMPLE_OBJ := simple.o slexer.o svec.o sparser.o scompiler.o svm.o
 
 .PHONY: run
 run: Simple

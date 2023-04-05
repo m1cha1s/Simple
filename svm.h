@@ -6,8 +6,8 @@
 
 typedef enum _OpType
 {
-    CONST_I,
-    PRINT,
+    OP_CONST_I = 0,
+    OP_PRINT = 1,
 } OpType;
 
 typedef struct _Op
@@ -18,6 +18,7 @@ typedef struct _Op
 
 typedef struct _VM
 {
+    SVec stack;
     uint32_t pc;
 } VM;
 
@@ -38,6 +39,12 @@ typedef enum _VMErr
     VM_ERR,
 } VMErr;
 
-VMErr vmExec(VMConfig *cfg, VMProg *prog);
+void vmProgInit(VMProg *prog);
+void vmInit(VM *vm);
+
+void vmProgFree(VMProg *prog);
+void vmFree(VM *vm);
+
+VMErr vmExec(VM *vm, VMConfig *cfg, VMProg *prog);
 
 #endif

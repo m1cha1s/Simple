@@ -33,6 +33,24 @@ void svecAdd(SVec *v, void *data)
     v->data[v->total++] = data;
 }
 
+void *svecPop(SVec *v)
+{
+    if (v->total == 0)
+        return NULL;
+
+    uint32_t idx = v->total - 1;
+
+    void *data = v->data[idx];
+
+    v->data[idx] = NULL;
+    v->total--;
+
+    if (v->total > 0 && v->total == v->capacity / 4)
+        svecResize(v, v->capacity / 2);
+
+    return data;
+}
+
 void svecSet(SVec *v, uint32_t idx, void *data)
 {
     if (idx >= 0 && idx < v->total)
